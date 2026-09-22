@@ -16,12 +16,6 @@ class Settings(BaseSettings):
     #: Optional Maven Central mirror. Set it when the default Central endpoint
     #: is not reachable from the build environment.
     maven_central_mirror_url: str = ""
-    #: Looking an application up by name. The access key stands in for the
-    #: session cookie a browser would have; without one, only repository URLs
-    #: are accepted.
-    sso_access_token: str = ""
-    sso_resolve_ip: str = ""
-    catalog_base_url: str = ""
     #: Optional URL of the test-enforcement usage guide. The turn fetches it
     #: rather than working from a copy: commands change, and a prompt that
     #: pins them is wrong the day after it is written.

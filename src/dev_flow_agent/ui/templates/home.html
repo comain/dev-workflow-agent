@@ -5,8 +5,8 @@
 <form method="post" action="{{ root_path }}/">
   <label>Title <input name="title" required></label>
   <label>Request <textarea name="request" required rows="6"></textarea></label>
-  <label>Application name, repo URL or path <input name="repo_url" required
-    placeholder="sample_app"></label>
+  <label>Repository URL or path <input name="repo_url" required
+    placeholder="https://git.example.com/group/app.git"></label>
   <label>Branch <input name="branch" value="main" required></label>
   <button type="submit">Start</button>
 </form>

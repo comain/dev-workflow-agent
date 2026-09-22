@@ -24,7 +24,6 @@ from agent_core.runtime import GateAlreadyAnswered, RuntimeStore
 from agent_core.ui import humanize_wait
 
 from dev_flow_agent.artifacts import UnknownArtifact, open_store, read_artifact
-from dev_flow_agent.chongxiao import DEFAULT_BASE_URL, DEFAULT_RESOLVE_IP
 from dev_flow_agent.config import Settings
 from dev_flow_agent.progress import FAILED_STATUS
 from dev_flow_agent.db import TaskStore
@@ -456,27 +455,17 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         return owned
 
     def _repo_for(text: str) -> str:
-        """A repository URL, from a URL or from an application name.
+        """A repository URL or filesystem path.
 
-        People name applications; the catalog knows where each one's code is.
-        Resolving here rather than in the worker means a name that cannot be
-        resolved is refused while someone is still looking at the form, not
-        four minutes later in a run that failed at the clone.
+        A bare name is refused here, while someone is still looking at the
+        form, rather than later when the clone has nothing to fetch.
         """
-        from dev_flow_agent.chongxiao import Chongxiao, LookupFailed, looks_like_repo
+        from dev_flow_agent.workflow.repos import looks_like_repo
 
         value = (text or "").strip()
         if looks_like_repo(value):
             return value
-        lookup = Chongxiao(
-            access_token=settings.sso_access_token,
-            base_url=settings.catalog_base_url or DEFAULT_BASE_URL,
-            resolve_ip=settings.sso_resolve_ip or DEFAULT_RESOLVE_IP,
-        )
-        try:
-            return lookup.repo_url(value)
-        except LookupFailed as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail="a repository URL or path is required")
 
     @pages.get("/", response_class=HTMLResponse)
     def home():

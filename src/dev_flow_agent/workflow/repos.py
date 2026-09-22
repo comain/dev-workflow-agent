@@ -11,9 +11,8 @@ code to say what the change touches -- so triage declares the list, and the
 pipeline prepares a checkout for each. From then on every turn can read and
 change all of them, and every commit covers all of them.
 
-The names are application names, the same ones a person uses; the catalog
-turns each into a repository. A URL is taken as itself, so a repository with
-no application record is still reachable.
+Each extra repository is a clone URL or a filesystem path. A bare name is
+not resolved.
 """
 
 from __future__ import annotations
@@ -48,24 +47,28 @@ def declared_repos(text: str) -> List[str]:
     return names
 
 
-def _resolve(name: str, context: Mapping[str, Any]) -> str:
-    """The clone URL for one declared name."""
-    from dev_flow_agent.chongxiao import Chongxiao, LookupFailed, looks_like_repo
-    from dev_flow_agent.config import Settings
+def looks_like_repo(text: str) -> bool:
+    """Whether this is a repository URL or path, rather than a bare name."""
+    value = (text or "").strip()
+    if not value:
+        return False
+    return "://" in value or value.startswith(("/", ".", "~")) or ":" in value or "/" in value
 
+
+def _resolve(name: str, context: Mapping[str, Any]) -> str:
+    """The clone URL for one declared name.
+
+    A URL or path is used as given. A bare name is resolved only when the
+    caller supplied an ``applications`` lookup; otherwise it is unreachable.
+    """
     if looks_like_repo(name):
         return name
     lookup = context.get("applications")
     if lookup is None:
-        settings = Settings()
-        lookup = Chongxiao(
-            access_token=settings.sso_access_token,
-            base_url=settings.catalog_base_url or "https://catalog.example.com",
-            resolve_ip=settings.sso_resolve_ip or "",
-        )
+        return ""
     try:
         return lookup.repo_url(name)
-    except LookupFailed:
+    except Exception:
         return ""
 
 

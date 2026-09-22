@@ -54,10 +54,9 @@ service and the consumer that must move with it, a Jira issue that spans
 services by design -- all of those need more than one, and naming them here is
 what gets them checked out for every turn that follows.
 
-Name them as applications, the way people do (`sample_service`), or as
-clone URLs where an application record does not exist. Do not list the task's
-own repository; it is already here. Do not list a repository you merely read
-for context -- only ones the change will touch.
+Name them as clone URLs. Do not list the task's own repository; it is
+already here. Do not list a repository you merely read for context -- only
+ones the change will touch.
 
 End with two lines, exactly one `KIND` and one `REPOS`:
 
@@ -67,7 +66,7 @@ KIND: cr-fix
 KIND: feature-dev
 
 REPOS: none
-REPOS: sample_service, sample-web
+REPOS: https://git.example.com/group/sample-service.git, https://git.example.com/group/sample-web.git
 ```
 
 Title: {{ title }}

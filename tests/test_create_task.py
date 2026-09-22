@@ -110,63 +110,10 @@ def test_two_stores_can_migrate_at_once(tmp_path):
     assert "origin" in columns
 
 
-def _lookup(payload, status=200):
-    import json
-
-    def transport(method, url, body, headers):
-        assert headers["Authorization"].startswith("Bearer ")
-        # The gateway routes on the name while the socket goes to its address.
-        assert headers["Host"] == "catalog.example.com"
-        return status, json.dumps(payload).encode()
-
-    return transport
-
-
-def test_an_application_name_resolves_to_its_repository():
-    """People name applications, not clone URLs: `sample_app` is
-    what a ticket says, and the catalog knows where its code lives."""
-    from dev_flow_agent.chongxiao import Chongxiao
-
-    found = Chongxiao(
-        access_token="k",
-        transport=_lookup(
-            {
-                "status": 0,
-                "data": {
-                    "code": "sample_app",
-                    "git_path": "git@git.example.com:group/sample-app.git",
-                    "description": "sample application",
-                },
-            }
-        ),
-    )
-    assert found.service("sample_app").description == "sample application"
-    # ...in the HTTPS form the pipeline's token can clone.
-    assert found.repo_url("sample_app") == (
-        "https://git.example.com/group/sample-app.git"
-    )
-
-
-def test_a_name_that_resolves_to_nothing_says_so():
-    from dev_flow_agent.chongxiao import Chongxiao, LookupFailed
-
-    no_repo = Chongxiao(access_token="k", transport=_lookup({"status": 0, "data": {"code": "x"}}))
-    with pytest.raises(LookupFailed, match="no repository recorded"):
-        no_repo.service("x")
-
-    refused = Chongxiao(access_token="k", transport=_lookup({}, status=403))
-    with pytest.raises(LookupFailed, match="access key was refused"):
-        refused.service("x")
-
-    # Without a key it says which knob is missing rather than failing at a socket.
-    with pytest.raises(LookupFailed, match="DFA_SSO_ACCESS_TOKEN"):
-        Chongxiao(access_token="").service("x")
-
-
 def test_a_url_is_left_alone():
-    """Only a bare name is a lookup. Anything with a scheme, an SSH shape or a
-    path separator is a repository someone typed out in full."""
-    from dev_flow_agent.chongxiao import looks_like_repo
+    """Anything with a scheme, an SSH shape or a path separator is a repository.
+    A bare name is not."""
+    from dev_flow_agent.workflow.repos import looks_like_repo
 
     assert looks_like_repo("https://git.example.com/Island/sample-web")
     assert looks_like_repo("git@git.example.com:group/sample-app.git")
@@ -175,50 +122,23 @@ def test_a_url_is_left_alone():
     assert not looks_like_repo("")
 
 
-def test_the_form_accepts_an_application_name(tmp_path, monkeypatch):
-    """End to end: the name goes in the box, the repository comes out."""
+def test_the_form_requires_a_repository_url(tmp_path, monkeypatch):
+    """A clone URL is stored as given. A bare name is refused at the form."""
     monkeypatch.setenv("DFA_DATA_DIR", str(tmp_path / "var"))
-    monkeypatch.setenv("DFA_SSO_ACCESS_TOKEN", "k")
-    from dev_flow_agent import chongxiao
     from dev_flow_agent.app import create_app
 
-    real = chongxiao.Chongxiao
-
-    def answering(payload):
-        def build(**kw):
-            return real(**{**kw, "transport": _lookup(payload)})
-
-        return build
-
-    monkeypatch.setattr(
-        chongxiao,
-        "Chongxiao",
-        answering(
-            {
-                "status": 0,
-                "data": {
-                    "code": "sample_service",
-                    "git_path": "git@git.example.com:wms/sample-service.git",
-                },
-            }
-        ),
-    )
     client = TestClient(create_app())
+    repo = "https://git.example.com/group/sample-service.git"
     created = client.post(
         "/api/v1/tasks",
-        json={"title": "t", "request": "r", "repo_url": "sample_service", "branch": "main"},
+        json={"title": "t", "request": "r", "repo_url": repo, "branch": "main"},
     )
     assert created.status_code == 201, created.text
-    assert created.json()["repo_url"] == (
-        "https://git.example.com/wms/sample-service.git"
-    )
+    assert created.json()["repo_url"] == repo
 
-    # A name nobody knows is refused while the person is still looking at the
-    # form, rather than four minutes later in a run that failed at the clone.
-    monkeypatch.setattr(chongxiao, "Chongxiao", answering({"status": 1, "msg": "not found"}))
     refused = client.post(
         "/api/v1/tasks",
-        json={"title": "t2", "request": "r", "repo_url": "no_such_app", "branch": "main"},
+        json={"title": "t2", "request": "r", "repo_url": "sample_service", "branch": "main"},
     )
     assert refused.status_code == 422
-    assert "not found" in refused.text
+    assert "repository URL or path is required" in refused.text
