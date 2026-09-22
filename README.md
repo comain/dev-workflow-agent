@@ -4,6 +4,8 @@ Example product built on [`agent-core`](https://github.com/comain/agent-core).
 Triage decides which path a task takes; the document stages are gated on a
 human; the build stages are not. The Python package is `dev_flow_agent`.
 
+![A completed dev-workflow-agent build](docs/images/workflow-build.png)
+
 ## Quick start
 
 ```bash
