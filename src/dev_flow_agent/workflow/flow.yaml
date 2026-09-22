@@ -1,0 +1,321 @@
+name: triage-spec-design-plan
+entry: prepare_workspace
+
+# Four stages of the same shape: render a prompt, take a turn, persist the
+# document, gate it. Each stage reads the approved document above it, so a
+# reject loops back to its own render rather than restarting the pipeline.
+nodes:
+  - name: prepare_workspace
+    uses: prepare_workspace
+
+  # What kind of work this is decides how much of the pipeline it walks. A
+  # person confirms it: it sets how much scrutiny the change receives.
+  - name: render_triage
+    uses: render_prompt
+    config: {template: triage.md.j2, into: prompt, values: [title, request, comments]}
+  - name: write_triage
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: triage}
+  - name: persist_triage
+    uses: persist_doc
+    config: {artifact: triage.md, label: triage, state_key: triage_md, attempt_key: triage_attempt}
+  - name: review_triage
+    uses: human_gate
+    config:
+      kind: input
+      artifact_key: triage_md
+      attempt_key: triage_attempt
+      prompt_keys: [title]
+  - name: publish_triage
+    uses: publish_doc
+    config: {artifact: triage.md, state_key: triage_md}
+  # Triage has read the request and the code, so it is where the rest of the
+  # repositories become known. Everything after this can read and change them.
+  - name: prepare_repos
+    uses: prepare_repos
+
+  - name: render_spec
+    uses: render_prompt
+    config: {template: write_spec.md.j2, into: prompt, values: [title, triage_md, comments, request, jira, repos]}
+  - name: write_spec
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: spec}
+  - name: persist_spec
+    uses: persist_doc
+    config: {artifact: spec.md, label: spec, state_key: spec_md, attempt_key: spec_attempt}
+  - name: review_spec
+    uses: human_gate
+    config:
+      kind: input
+      artifact_key: spec_md
+      attempt_key: spec_attempt
+      prompt_keys: [title]
+
+  - name: render_design
+    uses: render_prompt
+    config: {template: write_design.md.j2, into: prompt, values: [title, spec_md, comments, request, jira, repos]}
+  - name: write_design
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: design}
+  - name: persist_design
+    uses: persist_doc
+    config: {artifact: design.md, label: design, state_key: design_md, attempt_key: design_attempt}
+  # A critique turn between the design and the person approving it. It has no
+  # gate of its own: its whole output is what the human reads first.
+  - name: render_design_review
+    uses: render_prompt
+    config: {template: review_design.md.j2, into: prompt, values: [title, spec_md, design_md]}
+  - name: write_design_review
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: design_review}
+  - name: persist_design_review
+    uses: persist_doc
+    config:
+      artifact: design-review.md
+      label: auto design review
+      state_key: design_review_md
+      attempt_key: design_review_attempt
+      reviews: design
+  - name: review_design
+    uses: human_gate
+    config:
+      kind: input
+      artifact_key: design_md
+      attempt_key: design_attempt
+      prompt_keys: [title, design_review_md]
+
+  - name: render_plan
+    uses: render_prompt
+    config: {template: write_plan.md.j2, into: prompt, values: [title, spec_md, design_md, comments, jira, repos]}
+  - name: write_plan
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: plan}
+  - name: persist_plan
+    uses: persist_doc
+    config: {artifact: plan.md, label: plan, state_key: plan_md, attempt_key: plan_attempt}
+  - name: review_plan
+    uses: human_gate
+    config:
+      kind: input
+      artifact_key: plan_md
+      attempt_key: plan_attempt
+      prompt_keys: [title]
+
+  # Publishing happens on the approve path only: a draft a human rejected has
+  # no business in the repository.
+  - name: publish_spec
+    uses: publish_doc
+    config: {artifact: spec.md, state_key: spec_md}
+  - name: publish_design
+    uses: publish_doc
+    config: {artifact: design.md, state_key: design_md}
+  - name: publish_design_review
+    uses: publish_doc
+    config: {artifact: design-review.md, state_key: design_review_md}
+  - name: publish_plan
+    uses: publish_doc
+    config: {artifact: plan.md, state_key: plan_md}
+
+  # Below here the pipeline writes code and runs unattended. A human is asked
+  # only when the review cannot get itself to clean, or a task fails twice.
+  - name: plan_tasks
+    uses: plan_tasks
+  - name: next_task
+    uses: next_task
+  - name: render_build
+    uses: render_prompt
+    config:
+      template: build_task.md.j2
+      into: prompt
+      values: [title, spec_md, design_md, task_seq, task_title, task_body, task_origin, jira, maven_settings, repos, enforcement_guide]
+  - name: write_build
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: build}
+  - name: commit_task
+    uses: commit_task
+
+  # One agent per axis, reading the same diff with one question each. A single
+  # turn covering all five goes shallow on whichever the diff does not obviously
+  # implicate -- usually security.
+  # The enforcement gate closes the build: issue-tracked work answers to its own tests
+  # before anyone reviews it, and a failure sends the work back rather than
+  # being noted and passed over.
+  - name: render_enforce
+    uses: render_prompt
+    config: {template: enforce.md.j2, into: prompt, values: [title, jira, base, maven_settings, enforce_in, enforcement_guide]}
+  - name: write_enforce
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: enforce}
+  - name: persist_enforce
+    uses: persist_doc
+    config:
+      artifact: enforcement.md
+      label: enforcement
+      state_key: enforcement_md
+      attempt_key: enforcement_attempt
+  - name: enforcement_verdict
+    uses: enforcement_verdict
+  - name: escalate_enforcement
+    uses: human_gate
+    config:
+      kind: approve
+      artifact_key: enforcement_md
+      attempt_key: enforcement_round
+      prompt_keys: [title]
+  - name: queue_enforce_fix
+    uses: queue_repair
+    config:
+      origin: enforcement
+      title: "Fix the test-enforcement gate"
+      body_key: enforcement_md
+  - name: queue_review_fix
+    uses: queue_repair
+    config:
+      origin: review
+      title: "Address the review's Critical findings"
+      body_key: review_md
+
+  - name: review_axes
+    uses: review_axes
+  - name: review_axis
+    uses: review_axis
+  - name: merge_reviews
+    uses: merge_reviews
+  - name: persist_review
+    uses: persist_doc
+    config:
+      artifact: review.md
+      label: review
+      state_key: review_md
+      attempt_key: review_attempt
+      # The axes report as review_correctness, review_security, ...
+      turn_label: review
+      # ...so this step, and only this one, owns its prefixed labels. Inferring
+      # that from the underscore would give `design` the `design_review` step.
+      fans_out: true
+  - name: review_verdict
+    uses: review_verdict
+
+
+  # The two places the unattended half asks for a person.
+  - name: escalate_build
+    uses: human_gate
+    config:
+      kind: approve
+      prompt_keys: [title, build_blocked]
+  - name: skip_task
+    uses: skip_task
+  - name: abandon_build
+    uses: abandon_build
+  - name: escalate_review
+    uses: human_gate
+    config:
+      kind: input
+      artifact_key: review_md
+      attempt_key: review_round
+      prompt_keys: [title]
+
+  - name: render_simplify
+    uses: render_prompt
+    config: {template: simplify_code.md.j2, into: prompt, values: [title, repos]}
+  - name: write_simplify
+    uses: agent_turn
+    config: {result_mode: normalized, progress_detail: public_detail, label: simplify}
+  - name: commit_simplify
+    uses: commit_changes
+    config: {message: "simplify"}
+  - name: publish_review
+    uses: publish_doc
+    config: {artifact: review.md, state_key: review_md}
+
+edges:
+  - [prepare_workspace, render_triage]
+  - [render_triage, write_triage]
+  - [write_triage, persist_triage]
+  - [persist_triage, review_triage]
+  - [publish_triage, prepare_repos]
+  - [prepare_repos, render_spec]
+  - [render_spec, write_spec]
+  - [write_spec, persist_spec]
+  - [persist_spec, review_spec]
+  - [render_design, write_design]
+  - [write_design, persist_design]
+  - [persist_design, render_design_review]
+  - [render_design_review, write_design_review]
+  - [write_design_review, persist_design_review]
+  - [persist_design_review, review_design]
+  - [render_plan, write_plan]
+  - [write_plan, persist_plan]
+  - [persist_plan, review_plan]
+  - [publish_design, publish_design_review]
+  - [publish_design_review, render_plan]
+  - [publish_plan, plan_tasks]
+  - [plan_tasks, next_task]
+  - [render_build, write_build]
+  - [write_build, commit_task]
+  - [commit_task, next_task]
+  - [merge_reviews, persist_review]
+  - [render_enforce, write_enforce]
+  - [write_enforce, persist_enforce]
+  - [persist_enforce, enforcement_verdict]
+  - [queue_enforce_fix, next_task]
+  - [queue_review_fix, next_task]
+  - [persist_review, review_verdict]
+  - [skip_task, next_task]
+  - [render_simplify, write_simplify]
+  - [write_simplify, commit_simplify]
+  - [commit_simplify, publish_review]
+  - [publish_review, __end__]
+
+branches:
+  - from: review_spec
+    selector: gate_decision
+    routes: {approve: publish_spec, reject: render_spec}
+  - from: review_design
+    selector: gate_decision
+    routes: {approve: publish_design, reject: render_design}
+  - from: review_plan
+    selector: gate_decision
+    routes: {approve: publish_plan, reject: render_plan}
+  - from: next_task
+    selector: more_tasks
+    routes: {build: render_build, review: review_axes, enforce: render_enforce, blocked: escalate_build}
+  - from: review_verdict
+    selector: review_outcome
+    routes: {clean: render_simplify, fix: queue_review_fix, escalate: escalate_review}
+  # Both escalations honour the answer. Routing a gate's approve and reject to
+  # the same node asks a question and ignores it.
+  - from: escalate_review
+    selector: gate_decision
+    routes: {approve: render_simplify, reject: queue_review_fix}
+  - from: escalate_build
+    selector: gate_decision
+    routes: {approve: skip_task, reject: abandon_build}
+  - from: enforcement_verdict
+    selector: enforcement_outcome
+    routes: {pass: review_axes, fix: queue_enforce_fix, escalate: escalate_enforcement}
+  # The gate could not be satisfied. Approving means "review it anyway, I have
+  # read why"; it does not mean skipping a task, which is what the build
+  # escalation does and why the two cannot share a gate.
+  - from: escalate_enforcement
+    selector: gate_decision
+    routes: {approve: review_axes, reject: abandon_build}
+  - from: review_triage
+    selector: gate_decision
+    routes: {approve: publish_triage, reject: render_triage}
+  # Lean work has no design to critique and no plan to follow: it is understood
+  # and small, which is what triage established.
+  - from: publish_spec
+    selector: workflow_kind
+    routes: {feature-dev: render_design, lean: plan_tasks}
+
+fanouts:
+  - from: review_axes
+    over: review_axes
+    node: review_axis
+    join: merge_reviews
+    item_key: axis
+    collect: axis_reviews
+    # Five or six agent processes at once is the point; more would be a fork
+    # bomb on a box shared with three other products.
+    max_parallel: 6

@@ -1,0 +1,98 @@
+{# Rubric incorporated from the dev-skills `test-driven-development` (the
+   RED/GREEN/REFACTOR cycle) and `incremental-implementation` (Rule 0
+   Simplicity First, Rule 0.5 Scope Discipline, Rule 1 One Thing at a Time).
+   The agent has no skills installed, so the rubric travels with the prompt.
+   Keep in step with those skills when they change. #}
+Implement exactly one task from the approved plan, in this repository.
+
+## Task {{ task_seq }}: {{ task_title }}
+
+{{ task_body }}
+
+{% if task_origin == "enforcement" %}
+## Finish this by seeing the gate pass
+
+This task exists because the test-enforcement gate failed, and the report above
+is what it said. Fix it, then **run the enforcement command yourself and read
+its result**. If it still fails, fix what it now says and run it again. Keep
+going until you have seen it pass.
+
+Do not finish on the assumption that a change was sufficient: the gate is
+re-run after you, and a task that hands back unverified work only produces
+another task saying the same thing. If you genuinely cannot make it pass --
+the environment will not support it, or the failure is outside this change --
+stop and say exactly that, with the last output you saw. That is a useful
+answer; a hopeful one is not.
+
+{% elif task_origin == "review" %}
+## Finish this by re-checking what was flagged
+
+This task exists because a reviewer raised Critical findings, listed above. Fix
+those, and only those. Then re-run the repository's tests and satisfy yourself
+that each finding is actually addressed -- the same reviewers read the result,
+and a finding that survives comes straight back.
+
+{% endif %}## How to work
+
+Discover the stack first: read how this repository builds, tests and lints, and
+use its own commands. Do not introduce a tool it does not already use.
+
+Follow the test-first cycle:
+
+1. **RED** — write the test the task's acceptance criteria describe, and run it.
+   It must fail. A test that passes immediately proves nothing.
+2. **GREEN** — write the minimum code that makes it pass. Do not over-engineer.
+3. **REFACTOR** — with the test green, improve naming, remove duplication,
+   extract shared logic. Run the tests after every step to confirm nothing broke.
+
+Test behaviour, not implementation: a test that would still pass if the feature
+were broken is worse than no test.
+
+**Simplicity first.** What is the simplest thing that could work? Three similar
+lines beat a premature abstraction. Implement the naive, obviously-correct
+version; an abstraction has to earn its complexity, and generalising before the
+third use case is guessing. Would a staff engineer read this and say "why didn't
+you just..."?
+
+**Scope discipline.** Touch only what this task requires. Do not clean up
+adjacent code, refactor imports in files you are not modifying, remove comments
+you do not fully understand, modernise syntax in files you are only reading, or
+add anything the task does not ask for. If you notice something worth improving
+outside this task, write it at the end of your reply under "Noticed but not
+touching" — do not fix it.
+
+**One thing at a time.** This task becomes one commit. Do not start the next
+task.
+
+Match the surrounding code: its naming, structure, error handling and comment
+density. A change that reads as though the codebase wrote it is the goal.
+
+If the task cannot be done as written — it contradicts the code, or depends on
+something absent — stop and say so plainly instead of implementing something
+adjacent.
+
+Leave the workspace clean: no scratch files, no commented-out code, no debug
+output.
+
+{% if jira %}
+## Keep the documents true
+
+A task that changes behaviour updates the document that describes it, in the
+same commit as the change: `doc/usage-{{ jira }}.md` for setup, commands,
+behaviour, rollout or operations; `doc/design-{{ jira }}.md` when the
+implementation diverges from what was designed; `doc/spec-{{ jira }}.md` when
+scope or acceptance criteria move. A document updated in a later commit is
+wrong for every reader in between, and one updated never is worse than absent
+because it is believed.
+
+{% endif %}{% include "_blf_enforcement.md" %}
+
+Feature: {{ title }}
+
+Specification:
+{{ spec_md }}
+
+Design:
+{{ design_md }}
+
+{% include "_repos.md" %}

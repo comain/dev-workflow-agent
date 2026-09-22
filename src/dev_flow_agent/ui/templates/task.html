@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }} · dev-flow{% endblock %}
+{% block body %}
+<h1>{{ task.title }}</h1>
+<p class="meta">{{ task.status }} · {{ task.repo_url }} @ {{ task.branch }}</p>
+{% if task.status == "failed" %}
+<form method="post" action="{{ root_path }}/tasks/{{ task.task_id }}/retry">
+  <button type="submit">Retry</button>
+</form>
+{% elif task.status in ("queued", "running", "waiting_human") %}
+<form method="post" action="{{ root_path }}/tasks/{{ task.task_id }}/fail">
+  <button type="submit" value="fail">Fail</button>
+</form>
+{% endif %}
+
+<ol class="pipeline">
+  {% for step in pipeline %}
+    {% if step.selects %}
+    <li{% if step.current %} aria-current="step"{% endif %}{% if step.stage %} data-stage="{{ step.stage }}"{% endif %}{% if step.repair %} class="repair repair-{{ step.repair }}"{% endif %}>
+      <a href="{{ root_path }}/tasks/{{ task.task_id }}?stage={{ step.selects }}"
+         {% if step.selected %}class="selected" aria-current="page"{% endif %}>{{ step.name }}</a>
+    </li>
+    {% else %}
+    <li{% if step.current %} aria-current="step"{% endif %}>{{ step.name }}</li>
+    {% endif %}
+  {% endfor %}
+</ol>
+
+<section id="stage" aria-labelledby="stage-title">
+  <h2 id="stage-title">{{ selected_label }}</h2>
+
+  {% if plan_tasks %}
+  <section id="tasks" aria-labelledby="tasks-title">
+    <h3 id="tasks-title">Plan tasks
+      <span class="muted" id="tasks-count">{{ plan_tasks | selectattr("status", "equalto", "done") | list | length }}/{{ plan_tasks | length }}</span>
+    </h3>
+    <ol class="tasks">
+      {% for t in plan_tasks %}
+      <li class="task task-{{ t.status }}" data-seq="{{ t.seq }}"{% if t.status == "running" %} aria-current="step"{% endif %}>
+        <span class="task-status">{{ t.status }}</span>
+        <span class="task-title">{{ t.title }}</span>
+        <code class="task-sha">{% if t.commit_sha %}{{ t.commit_sha[:8] }}{% endif %}</code>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  {% if review_axes %}
+  <section id="axes" aria-labelledby="axes-title">
+    <h3 id="axes-title">Review agents
+      <span class="muted" id="axes-count">{{ review_axes | selectattr("status", "equalto", "done") | list | length }}/{{ review_axes | length }}</span>
+    </h3>
+    <ol class="tasks">
+      {% for a in review_axes %}
+      <li class="task task-{{ a.status }}" data-axis="{{ a.name }}"{% if a.status == "running" %} aria-current="step"{% endif %}>
+        <span class="task-status">{{ a.status }}</span>
+        <span class="task-title">{{ a.title }}</span>
+        <code class="task-sha">{% if a.verdict %}{{ a.verdict }}{% endif %}</code>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <section id="progress" aria-live="polite" aria-labelledby="progress-title">
+    <h3 id="progress-title">Activity</h3>
+    <p id="progress-empty" class="muted"{% if lanes | map(attribute="rows") | select | first %} hidden{% endif %}>
+      {% if task.status in ("queued", "running") %}Waiting for the agent to report.{% else %}Nothing recorded for this stage.{% endif %}
+    </p>
+    <div id="progress-lanes" class="lanes{% if lanes | length > 1 %} split{% endif %}">
+      {% for lane in lanes %}
+      <section class="lane" data-lane="{{ lane.key }}">
+        {% if lane.label %}
+        <h4 class="lane-title">{{ lane.label }}
+          {% if lane.status %}<span class="lane-status task-{{ lane.status }}">{{ lane.status }}</span>{% endif %}
+        </h4>
+        {% endif %}
+        <div class="progress-list" data-lane-list="{{ lane.key }}">
+          {% for row in lane.rows %}
+          <div{% if row.error %} class="progress-error"{% endif %}><time class="progress-time" datetime="{{ row.at }}">{{ row.at[11:19] }}</time>{{ row.text }}</div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if artifact_name %}
+  <section id="artifact" aria-labelledby="artifact-title">
+    <h3 id="artifact-title">{{ artifact_name }}</h3>
+    {% if artifact_html %}
+      <div class="markdown">{{ artifact_html | safe }}</div>
+    {% else %}
+      <p class="muted">Not written yet.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if review_html %}
+  <details class="auto-review" open>
+    <summary>Automated review</summary>
+    <div class="markdown">{{ review_html | safe }}</div>
+  </details>
+  {% endif %}
+
+  {% if waiting and gate %}
+  <section id="gate" aria-labelledby="gate-title">
+    <h3 id="gate-title">Your decision</h3>
+    <form method="post" action="{{ root_path }}/gates/{{ gate.gate_id }}/answer">
+      <label>Comments <textarea name="comments" rows="4"></textarea></label>
+      <button type="submit" name="decision" value="approve">Approve</button>
+      <button type="submit" name="decision" value="reject">Request changes</button>
+    </form>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}
+{% if '"mermaid"' in artifact_html or '"mermaid"' in review_html %}
+<script type="module">
+  // Loaded only for a page that has a diagram, and only from here: a failure to
+  // reach the CDN leaves the source visible as text rather than a blank space.
+  try {
+    const mermaid = (await import("https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs")).default;
+    mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "neutral" });
+    await mermaid.run({ querySelector: "pre.mermaid" });
+  } catch (e) {
+    document.querySelectorAll("pre.mermaid").forEach(function (el) {
+      el.classList.add("mermaid-unrendered");
+    });
+  }
+</script>
+{% endif %}
+{% if task.status in ("queued", "running", "waiting_human") %}
+<script src="{{ root_path }}/static/task.js?v={{ static_version }}" data-task-id="{{ task.task_id }}" data-root="{{ root_path }}" data-gate-id="{{ gate.gate_id if gate else '' }}" data-after-id="{{ after_id }}" data-status="{{ task.status }}" data-stage="{{ selected }}" data-fanout="{{ 1 if selected_fans_out else 0 }}" data-pinned="{{ 1 if pinned else 0 }}"></script>
+{% endif %}
+{% endblock %}

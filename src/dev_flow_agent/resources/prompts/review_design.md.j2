@@ -1,0 +1,78 @@
+{# Rubric incorporated from the dev-skills `design-review` skill: its eleven
+   review axes, the first-principles check, the severity vocabulary, and the
+   present-don't-decide rule. The agent running this prompt has no skills
+   installed, so the rubric travels with the prompt rather than being named.
+   Keep in step with that skill when it changes. #}
+Review the design below before a human is asked to approve it.
+
+Write the full `design-review.md` document.
+
+{% set document = "design-review.md" %}{% include "_document_contract.md" %}
+
+This is the quality gate for the paper phase: catching a scope gap or a wrong
+abstraction here is an order of magnitude cheaper than catching it in code.
+Apply the same bar you would to a diff — would a staff engineer approve this?
+
+Verify claims against the real codebase. A design that names a file, a function,
+or an existing mechanism is asserting something checkable; read the code and say
+when it is wrong.
+
+Review against these axes and record findings under each that has any:
+
+1. **Change scope** — Does it cover every affected surface: commands, workers,
+   CI paths, reports, generated artifacts, operational workflows? Is the
+   in-scope/out-of-scope decision auditable?
+2. **Abstraction and extensibility** — Is the boundary right? Do shared
+   contracts stay neutral while specific behavior lives in owned adapters?
+3. **Verification depth** — Is there multi-phase verification proving both
+   no-regression and the new behavior?
+4. **API, schema, and data-model compatibility** — Are changes minimal and
+   compatible? For an incompatible one, are migration, compatibility window,
+   rollback, backfill, and reader/writer behavior documented?
+5. **Risks and mitigations** — Are realistic failure modes named with concrete
+   mitigations or detection?
+6. **Simplicity** — Any over-engineering, duplicate mechanisms, or parallel
+   implementations to eliminate?
+7. **Document structure** — For a large design: a meaningful section tree,
+   schema changes isolated, a changelog for later updates.
+8. **Decisiveness** — Is every decision explicit and singular? A design full of
+   open options is not a design.
+9. **Reuse over rebuild** — Does it reuse the existing framework, invariants,
+   abstractions, and extension points? Did the author explore the existing code
+   before building anything new?
+10. **Right problem, right module** — Is each change made where the problem
+    lives, rather than in the convenient module?
+11. **Performance budget** — Does every RPC, query, or loop over external calls
+    carry an estimate of volume × cost? Flag per-item calls in a loop, unbounded
+    fan-out, and queries with no supporting index.
+
+Give each finding its axis, a severity of **Critical**, **Important**, or
+**Nice-to-have**, the concrete problem, the location, and the fix you would
+make. Lead with Critical and Important.
+
+Then step back and answer these four from first principles — from the feature's
+purpose, not the design's own framing. A weak answer to any one means the design
+is not ready:
+
+1. What is the key goal of this feature, in one sentence, taken from the spec?
+2. Does the design fulfill that goal with the simplest right solution — is every
+   part earning its place?
+3. How will we prove the feature is correct in production? Name the concrete
+   signal, not "tests passed".
+4. What is the worst thing that happens if we got something wrong, and what
+   guard prevents or contains it? A severe, unguarded worst case is Critical.
+
+Say plainly when the design is sound. A review that manufactures findings to
+look thorough wastes the reviewer's attention.
+
+Do not decide anything. Surface findings and recommend; the human chooses fix,
+defer, or waive for each one. Surfacing a real risk and being overruled is a
+good outcome; quietly resolving or burying it is not.
+
+Title: {{ title }}
+
+Spec the design claims to satisfy:
+{{ spec_md }}
+
+Design under review:
+{{ design_md }}

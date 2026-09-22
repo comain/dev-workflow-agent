@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Waiting · dev-flow{% endblock %}
+{% block body %}
+<h1>Waiting for you</h1>
+{% if not gates %}
+  <p role="status">Nothing waiting. All workflows are running or complete.</p>
+{% else %}
+<ul>
+  {% for g in gates %}
+    <li>
+      <a href="{{ root_path }}/tasks/{{ g.task_ref }}">{{ g.node }}</a>
+      <span class="muted">{{ g.task_ref }} · {{ g.waited }}</span>
+    </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}dev-flow{% endblock %}
+{% block body %}
+<h1>New run</h1>
+<form method="post" action="{{ root_path }}/">
+  <label>Title <input name="title" required></label>
+  <label>Request <textarea name="request" required rows="6"></textarea></label>
+  <label>Application name, repo URL or path <input name="repo_url" required
+    placeholder="sample_app"></label>
+  <label>Branch <input name="branch" value="main" required></label>
+  <button type="submit">Start</button>
+</form>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<h2>Runs</h2>
+{% if not tasks %}
+  <p role="status">No runs yet. Submit the form to create one.</p>
+{% else %}
+<table>
+  <thead><tr><th>Status</th><th>Title</th><th>Repo</th><th>Updated</th></tr></thead>
+  <tbody>
+  {% for t in tasks %}
+    <tr>
+      <td>{{ t.status }}</td>
+      <td><a href="{{ root_path }}/tasks/{{ t.task_id }}">{{ t.title }}</a></td>
+      <td>{{ t.repo_url }}</td>
+      <td>{{ t.updated_at }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

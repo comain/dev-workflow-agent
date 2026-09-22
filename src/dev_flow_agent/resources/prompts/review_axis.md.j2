@@ -1,0 +1,96 @@
+{# One axis of the dev-skills `code-review-and-quality` five-axis review, read
+   by its own agent. The axis rubric is supplied by the caller so this template
+   stays the shape of a review rather than a copy of the rubric. #}
+Review this branch on one axis only: **{{ axis_title }}**.
+
+Read the actual change and review what is there, not what the plan said would
+be there.
+
+{% if commits is defined and commits %}This run made these commits, and they are all you are
+reviewing:
+
+{% for sha in commits %}    {{ sha }}
+{% endfor %}
+    git diff {{ commits[0] }}^..{{ commits[-1] }}
+
+Nothing else on this branch is yours to judge. A person may have committed to
+it before the run started, and trunk may have moved since the checkout; both
+show up in wider ranges as though this run had written them.
+{% elif trunk %}What this branch adds, and all you are reviewing, is:
+
+    git diff {{ trunk }}...HEAD
+
+Three dots. That is the branch against the commit it forked from, so it is
+this work and nobody else's. `git log {{ trunk }}...HEAD` is how it got there.
+{% if base %}
+`{{ base }}..HEAD` is the run's own checkout range, and it is *not* the review
+scope: `{{ base }}` is where this checkout started, and everything merged into
+trunk since then appears in two dots as though this branch wrote it. On one
+job that difference was 36 files against 5.
+{% endif %}{% elif base %}This checkout has no trunk reference, so the branch
+comparison cannot be computed. `git diff {{ base }}..HEAD` is what this run
+wrote — review that, and say plainly that the branch-versus-trunk comparison
+was unavailable rather than approximating it. Note that it may contain commits
+this run did not make.
+{% else %}This checkout gives no reliable base to diff against. Say so in your
+findings rather than reviewing a range you guessed at.
+{% endif %}
+
+## What to look for
+
+{{ axis_focus }}
+
+## What counts as a finding
+
+Review the change, not the file it lives in. A finding must be about a line
+this branch changed, or about something the change should have done and did
+not -- a missing test for new behaviour, an unhandled case the change
+introduces. Those need no line number.
+
+Problems in code the branch never touched are real and worth writing down,
+but they belong under a `## Pre-existing` heading and are never Critical: the
+run cannot fix what it did not write, so raising one there sends the build
+round a repair loop it cannot finish, and then wakes a person. Put it in
+`## Pre-existing`, say what you would do about it, and let someone decide
+separately.
+
+## How to report
+
+Write markdown, starting with a `## Findings` heading. Your entire reply is the
+review for this axis: no preamble, no tool narration, and nothing about the
+other axes — each is being read by someone else, and repeating their work makes
+the merged review unreadable.
+
+Give each finding a severity of **Critical**, **Important** or
+**Nice-to-have**, the file and line, the concrete problem, and the fix you would
+make. When you flag a structural problem, name the restructuring rather than
+only the symptom.
+
+Reserve **Critical** for what must not ship on this axis: incorrect behaviour, a
+security hole, data loss, a performance cliff in a hot path, or an incompatible
+contract change with no migration. A Critical finding stops the run and asks a
+human, so spending it on a preference wastes their attention.
+
+Say plainly when there is nothing to report on this axis. "No findings" is a
+useful review; inventing one to look thorough is not.
+
+End with a single line, exactly one of:
+
+```
+VERDICT: clean
+VERDICT: critical
+```
+
+`critical` means you reported at least one **Critical** finding on the changed
+code. It is not a summary of how you feel about the change: a review whose
+worst finding is Important is `clean`, and says so while keeping the finding.
+The verdict is read back against your findings, and a line that disagrees with
+them is overridden and logged.
+
+{% if jira %}Issue: {{ jira }}
+{% endif %}Feature: {{ title }}
+
+Plan the work followed:
+{{ plan_md }}
+
+{% include "_repos.md" %}

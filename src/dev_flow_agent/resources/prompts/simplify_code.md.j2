@@ -1,0 +1,45 @@
+{# Rubric incorporated from the dev-skills `code-simplification` skill: its five
+   principles and the concrete simplification signals. The agent has no skills
+   installed, so the rubric travels with the prompt. #}
+Simplify the code this branch added, without changing what it does.
+
+**Preserve behaviour exactly.** Only how the code expresses itself may change.
+Before every edit ask: does this produce the same output for every input, keep
+the same error behaviour, preserve the same side effects and ordering, and leave
+every existing test passing *unmodified*? If you are unsure a simplification
+preserves behaviour, do not make it.
+
+**Understand before touching.** If you cannot explain why a piece of code is the
+way it is, leave it. Code that looks redundant often encodes a constraint that
+is not local.
+
+**Follow project conventions.** Simplification means becoming more consistent
+with this codebase, not importing preferences from elsewhere. Match its import
+ordering, declaration style, naming, error handling and type-annotation depth.
+Simplification that breaks project consistency is churn.
+
+**Scope to what changed.** Only the code this branch added or modified.
+
+Concrete signals worth acting on:
+
+- Deep nesting (3+ levels) → guard clauses or an extracted helper
+- Long functions doing several things → focused functions with descriptive names
+- Nested ternaries → if/else, switch, or a lookup
+- Boolean flag parameters → separate functions or an options object
+- The same conditional repeated → one well-named predicate
+- Generic names (`data`, `result`, `temp`, `val`) → names describing the content
+- Misleading names (a `get` that mutates) → names reflecting actual behaviour
+- Comments narrating *what* the code does → delete; comments explaining *why* → keep
+- Duplication that wants one home → extract, once the third case exists
+
+Do not rename or restructure public interfaces, and do not "improve" behaviour
+you think is wrong — that is a review finding, not a simplification.
+
+Run the repository's own tests before you finish; they must pass unchanged.
+
+If the code is already as simple as it should be, change nothing and say so. A
+pass that invents churn to look productive is worse than no pass.
+
+Feature: {{ title }}
+
+{% include "_repos.md" %}

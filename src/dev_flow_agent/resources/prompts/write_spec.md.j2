@@ -1,0 +1,74 @@
+{# Rubric incorporated from the dev-skills `spec-driven-development` skill,
+   Phase 1 (Spec Generation), adapted to this pipeline's file names. The agent
+   running this prompt has no skills installed, so the rubric travels with the
+   prompt. Keep in step with that skill when it changes. #}
+Write the full `spec.md` document from the request and the approved triage.
+
+{% set document = "spec.md" %}{% include "_document_contract.md" %}
+
+{% include "_repos.md" %}
+
+Stay at the requirements level: *what* we are building and *why*. Defer *how*
+to the design stage.
+
+**Surface your assumptions.** Anything the request leaves ambiguous, state as
+an explicit assumption under Open Questions rather than silently filling it in.
+Assumptions are the most dangerous form of misunderstanding, and this document
+exists to expose them before code is written.
+
+**Reframe vague requirements as testable conditions.** "Make it faster" becomes
+a target someone can check — a number, a threshold, a specific observable.
+
+Cover these sections. Drop one only when it genuinely does not apply, and say so
+rather than leaving it blank:
+
+```markdown
+# Spec: <feature name>
+
+## Objective
+What we are building and why. Who the user is. What success looks like.
+
+## Tech Stack
+Framework, language, and key dependencies with versions, as the repository
+actually uses them.
+
+## Commands
+Full executable commands with flags — build, test, lint, dev — not tool names.
+
+## Project Structure
+Where source, tests, and docs live in this repository.
+
+## Code Style
+One real snippet from this codebase plus the naming and formatting conventions
+it shows.
+
+## Testing Strategy
+Framework, where tests live, coverage expectations, which level of test covers
+which concern.
+
+## Boundaries
+- Always: ...
+- Ask first: ...
+- Never: ...
+
+## Success Criteria
+Specific, testable conditions that decide whether this is done.
+
+## Open Questions
+Anything unresolved that needs human input, including your assumptions.
+```
+
+{% include "_blf_overlay.md" %}
+
+Title: {{ title }}
+
+Triage:
+{{ triage_md }}
+
+Original request:
+{{ request }}
+{% if comments %}
+
+Reviewer comments to address:
+{{ comments }}
+{% endif %}

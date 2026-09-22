@@ -1,0 +1,81 @@
+{# Product-authored. dev-skills has no triage rubric: the categories are this
+   organisation's, and the routing they drive is this pipeline's. #}
+Decide what kind of work this request is, and say so.
+
+Write the full `triage.md` document.
+
+{% set document = "triage.md" %}{% include "_document_contract.md" %}
+
+Read enough of the repository to tell the difference — the request alone is
+often ambiguous, and the code usually settles it.
+
+## The kinds
+
+**bug-fix** — something already built behaves wrongly. There is a defect to
+reproduce: a stack trace, a wrong value, a monitor that fired, a reported
+symptom. The change is expected to be small and local, and what "correct" means
+is not in question.
+
+**cr-fix** — addressing findings a reviewer already raised on existing work.
+The analysis has been done by someone else; this is carrying it out.
+
+**feature-dev** — new capability, changed behaviour that someone has to decide
+on, or a change large enough that how to build it is a real question. Anything
+touching a contract other code depends on, a data model, or several modules at
+once belongs here even when the request sounds small.
+
+## What the choice costs
+
+A **bug-fix** or **cr-fix** takes the short path: intent, spec, then straight to
+building. No design, no design critique, no plan. That is right when the work
+is understood and small, and wrong when it is not — a defect whose cause is
+unknown, or whose fix touches a contract, is feature-dev however it was
+reported.
+
+**feature-dev** takes the full path, which costs four human gates and several
+more turns. Choose it when the work genuinely needs deciding, not to be safe.
+
+If you are unsure, say so in the document and choose **feature-dev**: an
+unnecessary design is wasted effort, but an unplanned change to something that
+needed planning is a defect nobody scoped.
+
+## The document
+
+State the kind, what in the request and the code led you there, what you
+expect the change to touch, and anything that would change your mind. Be
+specific: "the NPE at RedisShardedTaskQueue:162 has a clear cause and a local
+fix" is useful; "this looks like a bug" is not.
+
+## The repositories this touches
+
+The task names one repository, because someone had to type something. Say
+whether the change actually stays there. A contract and its callers, a shared
+service and the consumer that must move with it, a Jira issue that spans
+services by design -- all of those need more than one, and naming them here is
+what gets them checked out for every turn that follows.
+
+Name them as applications, the way people do (`sample_service`), or as
+clone URLs where an application record does not exist. Do not list the task's
+own repository; it is already here. Do not list a repository you merely read
+for context -- only ones the change will touch.
+
+End with two lines, exactly one `KIND` and one `REPOS`:
+
+```
+KIND: bug-fix
+KIND: cr-fix
+KIND: feature-dev
+
+REPOS: none
+REPOS: sample_service, sample-web
+```
+
+Title: {{ title }}
+
+Request:
+{{ request }}
+{% if comments %}
+
+Reviewer comments to address:
+{{ comments }}
+{% endif %}

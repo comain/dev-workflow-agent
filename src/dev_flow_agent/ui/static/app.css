@@ -1,0 +1,280 @@
+/* One neutral ramp, semantic names on top of it, and nothing styled by a
+   literal colour below this block.
+
+   The ramp is OpenHands' cool grey: a single family from near-white to
+   near-black, so every surface, border and shade of text is a step on one
+   scale rather than a hex someone picked that day. Components then refer to
+   roles -- surface, border, muted -- which is what makes a dark theme a
+   redefinition of eleven variables instead of a rewrite.
+
+   Typefaces are the system stack. Outfit and IBM Plex Mono are the OpenHands
+   faces, but fonts.googleapis.com does not resolve from the corp network, so
+   a webfont here would be a blank flash and then the fallback anyway. */
+:root {
+  --grey-50:  #f7f9fc;
+  --grey-100: #eef2f7;
+  --grey-200: #dce3ee;
+  --grey-300: #c3cddc;
+  --grey-400: #a3b0c4;
+  --grey-500: #7e8a9e;
+  --grey-600: #626d82;
+  --grey-700: #4b5468;
+  --grey-800: #383f50;
+  --grey-900: #2c313f;
+  --grey-925: #21252f;
+  --grey-950: #0b0e14;
+
+  --page: var(--grey-50);
+  --surface: #fff;
+  --surface-sunk: var(--grey-100);
+  --border: var(--grey-200);
+  --border-strong: var(--grey-300);
+  --text: #172033;
+  --text-dim: var(--grey-600);
+  --accent: #1d4ed8;
+  --accent-bg: #eff6ff;
+  --accent-border: #bfdbfe;
+  --danger: #b42318;
+  --ok: #067647;
+  --warn-bg: #fef3c7;
+  --warn-text: #92400e;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: var(--grey-950);
+    --surface: var(--grey-925);
+    --surface-sunk: var(--grey-900);
+    --border: var(--grey-800);
+    --border-strong: var(--grey-700);
+    --text: var(--grey-100);
+    --text-dim: var(--grey-400);
+    --accent: #93b4ff;
+    --accent-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+    --accent-border: color-mix(in srgb, var(--accent) 35%, transparent);
+    --danger: #ff9a8c;
+    --ok: #5dd39e;
+    --warn-bg: #3a2f10;
+    --warn-text: #fcd34d;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 15px/1.55 var(--ui);
+  color: var(--text);
+  background: var(--page);
+  -webkit-font-smoothing: antialiased;
+}
+
+header {
+  display: flex;
+  gap: 1.5rem;
+  align-items: baseline;
+  padding: 0.7rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+header > a { color: var(--text); text-decoration: none; font-weight: 650; letter-spacing: -0.01em; }
+nav a { color: var(--text-dim); text-decoration: none; margin-right: 0.9rem; font-size: 0.92rem; }
+nav a:hover { color: var(--accent); }
+
+main { max-width: 60rem; margin: 0 auto; padding: 1.5rem; }
+
+h1 { font-size: 1.35rem; line-height: 1.25; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+h2 { font-size: 1.05rem; margin: 0 0 0.75rem; letter-spacing: -0.005em; }
+h3 { font-size: 0.9rem; margin: 0 0 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); }
+
+label { display: block; margin: 0.75rem 0; }
+input, textarea, button { font: inherit; }
+input, textarea {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+button {
+  padding: 0.4rem 0.95rem;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-weight: 550;
+}
+button:hover { filter: brightness(1.06); }
+button[value="reject"],
+button[value="fail"] {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { text-align: left; padding: 0.55rem 0.7rem; border-bottom: 1px solid var(--border); }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
+
+.muted { color: var(--text-dim); }
+.error { color: var(--danger); }
+.meta { color: var(--text-dim); font-size: 0.9rem; margin: 0 0 1rem; }
+.banner {
+  margin: 0;
+  padding: 0.5rem 1.5rem;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 0.9rem;
+}
+
+/* The pipeline: a rail of steps, the one the run is on accented, the one being
+   read underlined. Two states on one control, because they are two facts. */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.6rem;
+  margin: 0 0 1.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.pipeline li {
+  padding: 0.22rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+.pipeline li[aria-current="step"] {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  font-weight: 550;
+}
+.pipeline li.repair { border-style: dashed; border-color: var(--border-strong); }
+.pipeline li.repair-done { opacity: 0.7; }
+.pipeline a { color: inherit; text-decoration: none; }
+.pipeline a:hover { color: var(--text); }
+.pipeline a.selected { color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--accent); }
+
+#stage { display: grid; gap: 1.25rem; }
+#stage > section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin: 0;
+}
+#stage > h2 { margin: 0; }
+
+/* Sub-agents: plan tasks and review axes are the same object -- a unit of work
+   with a state -- so they read the same way. */
+.tasks { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.25rem; }
+.task {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+.task:nth-child(odd) { background: var(--surface-sunk); }
+.task[aria-current="step"] { background: var(--accent-bg); border-color: var(--accent-border); }
+.task-status {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  min-width: 4.5rem;
+}
+.task-done .task-status { color: var(--ok); }
+.task-failed .task-status { color: var(--danger); }
+.task-done .task-title { color: var(--text-dim); }
+.task-title { flex: 1; }
+.task-sha { font-family: var(--mono); color: var(--text-dim); font-size: 0.78rem; }
+
+/* Activity: a log, so it is monospace with a tabular clock -- the column has to
+   hold still while the digits change. */
+.lanes { display: grid; gap: 0.9rem; }
+.lanes.split { grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); }
+.lane { min-width: 0; }
+.lane-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+}
+.lane-status { font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.04em; }
+.lanes.split .progress-list { max-height: 14rem; }
+.progress-list {
+  display: grid;
+  gap: 0;
+  max-height: 24rem;
+  overflow-y: auto;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+.progress-list > div { padding: 0.05rem 0.1rem; border-bottom: 1px solid var(--border); }
+.progress-list > div:last-child { border-bottom: 0; }
+.progress-error { color: var(--danger); }
+.progress-time {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.6rem;
+}
+
+.auto-review {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+}
+.auto-review summary { cursor: pointer; font-weight: 600; }
+
+.markdown { overflow-x: auto; }
+.markdown table { border-collapse: collapse; margin: 0.75rem 0; width: 100%; }
+.markdown th, .markdown td { border: 1px solid var(--border); padding: 0.35rem 0.6rem; text-align: left; vertical-align: top; }
+.markdown th { background: var(--surface-sunk); font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); font-size: inherit; }
+.markdown tbody tr:nth-child(even) { background: var(--surface-sunk); }
+.markdown pre { background: var(--surface-sunk); padding: 0.75rem; border-radius: var(--radius-sm); overflow-x: auto; font-family: var(--mono); font-size: 0.85rem; }
+.markdown code { background: var(--surface-sunk); padding: 0.1rem 0.32rem; border-radius: 4px; font-family: var(--mono); font-size: 0.87em; }
+.markdown pre code { background: none; padding: 0; }
+.markdown blockquote { margin: 0.75rem 0; padding-left: 0.8rem; border-left: 3px solid var(--border-strong); color: var(--text-dim); }
+.markdown .task-list-item { list-style: none; margin-left: -1.2rem; }
+.markdown .task-list-item-checkbox { margin-right: 0.4rem; }
+.markdown h1, .markdown h2, .markdown h3 { margin: 1.1rem 0 0.5rem; line-height: 1.3; text-transform: none; letter-spacing: -0.005em; color: var(--text); }
+.markdown h1 { font-size: 1.2rem; }
+.markdown h2 { font-size: 1.05rem; }
+.markdown h3 { font-size: 0.95rem; }
+.markdown img { max-width: 100%; }
+.markdown pre.mermaid { background: none; padding: 0.5rem 0; text-align: center; overflow-x: auto; }
+.markdown pre.mermaid.mermaid-unrendered { background: var(--surface-sunk); padding: 0.75rem; text-align: left; }
+
+.documents { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0 0 0.75rem; }
+.documents [aria-current="page"] { font-weight: 600; }

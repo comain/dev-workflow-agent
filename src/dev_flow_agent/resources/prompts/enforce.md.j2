@@ -1,0 +1,91 @@
+{# The test-enforcement gate, run as its own step so its evidence exists
+   rather than being asserted. Rubric from the dev-skills
+   `test-driven-development` section, which the build prompt also carries. #}
+Run the test-enforcement gate for this branch and report what happened.
+
+Write the full `enforcement.md` document.
+
+{% set document = "enforcement.md" %}{% include "_document_contract.md" %}
+
+{% include "_blf_enforcement.md" %}
+
+## What this document is for
+
+It is the evidence. A later reviewer, and the ship gate after them, read this
+rather than taking anyone's word that the suite ran — so record the command
+exactly as you ran it, its exit status, and the part of its output that shows
+the result: diff coverage, mutation summary, the enforcement marker.
+
+A gate you could not run has not passed, and reporting it as passed is the one
+outcome that makes all of this worthless. But say *which* of the two it was.
+A missing `doc/test-enforce-usage.md` is neither: the profile in the POM is the
+gate, and the document only describes it.
+
+## Cheapest question first
+
+The full gate compiles every module, runs the suite, then mutates it. Reaching
+a dependency error after all of that costs twenty minutes to learn something
+the first thirty seconds could have told you. So, in order, stopping at the
+first that answers:
+
+1. Is the gate installed? `mvn -Dtest.enforcement.enabled=true help:effective-pom`
+   must show `test-enforcer` under active `build/plugins`.
+2. Does the build resolve and compile at all?
+   `mvn -B -DskipTests -Dtest.enforcement.enabled=true test-compile` on the
+   changed modules.
+3. Only then the full enforcement command, with coverage and mutation.
+
+If 1 or 2 fails for a reason in the environment rather than in the work — a
+plugin that is not installed, the wrong JDK, a repository that answers nothing
+— stop there and report `blocked`, naming the exact coordinate or plugin.
+Check the mirror settings above first: a resolution error against `central` is
+a missing `-gs`, not a missing artifact, and `blocked` would be wrong. Do not retry variants of a command that failed
+that way: a different module list or test selection cannot make an absent
+dependency resolve, and the next build turn cannot either. `blocked` goes
+straight to a person, which is the fastest way to get it fixed.
+
+Report `fail` for what the work can close: tests that fail, diff coverage under
+the floor, survivors on changed lines, and a mutation run that produced no
+statistics at all.
+
+`Minion exited abnormally due to TIMED_OUT` is not that. PIT gives each mutant
+a budget of `timeoutConstant` plus `timeoutFactor` times the test's own time;
+a mutant that hangs the test -- a flipped loop condition, a removed increment
+-- exceeds it, and killing the minion is *how that mutant is killed*. PIT
+starts a fresh one and carries on. Judge by the statistics block:
+
+    >> Generated 28 mutations Killed 28 (100%)
+    >> Mutations with no coverage 0. Test strength 100%
+
+That is a complete run meeting a 100% threshold, timeout warnings and all.
+
+If it failed, say what failed and what would have to change: which tests, which
+surviving mutants on which changed lines, which module. The next build turn
+reads this document and works from it.
+
+End with a single line, exactly one of:
+
+```
+ENFORCEMENT: pass
+ENFORCEMENT: fail
+ENFORCEMENT: blocked
+```
+
+Feature: {{ title }}
+
+{% if enforce_in is defined and enforce_in %}## Where to run it
+
+The gate runs where the code changed, which is not always where the task
+started. This run changed:
+
+{% for repo in enforce_in %}- `{{ repo.name }}` -- {{ repo.path }}
+{% for path in repo.changed[:12] %}    {{ path }}
+{% endfor %}{% endfor %}
+Run the gate in each of them, `cd`-ing into the checkout, and report each one
+separately with its own command and evidence. The verdict is the worst of
+them: one repository passing does not cover another that was never gated.
+
+A repository that changed nothing is not listed and is not gated -- it has
+nothing to measure, which is a different thing from measuring nothing.
+{% endif %}
+The change under test is `git diff {{ base }}..HEAD`.

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}dev-flow{% endblock %}</title>
+  <link rel="stylesheet" href="{{ root_path }}/static/app.css?v={{ static_version }}">
+</head>
+<body>
+{% if allow_anonymous_gates %}
+  <p class="banner" role="status">Demo mode: anonymous gate answers are on. Do not bind this off-loopback.</p>
+{% endif %}
+<header>
+  <a href="{{ root_path }}/">dev-flow</a>
+  <nav><a href="{{ root_path }}/">Runs</a> <a href="{{ root_path }}/gates">Waiting</a></nav>
+</header>
+<main>
+{% block body %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

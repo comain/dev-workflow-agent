@@ -1,0 +1,109 @@
+{# Rubric incorporated from the dev-skills `design-driven-development` skill:
+   its Design Principles and Design Document Structure, folded to single-repo
+   because this pipeline produces one design document. The agent running this
+   prompt has no skills installed, so the rubric travels with the prompt. #}
+Write the full `design.md` document from the accepted spec.
+
+{% set document = "design.md" %}{% include "_document_contract.md" %}
+
+{% include "_repos.md" %}
+
+Design against the repository as it is: read the code you are changing and name
+real files, existing patterns, and the abstractions already there. A design
+written without opening the codebase will be reviewed against it anyway.
+
+Write to these principles — the review stage enforces them:
+
+- **Be decisive.** Each decision explicit and singular: "we **will** do A," not
+  "we could do A or B." Where a real alternative was weighed, state the choice
+  and footnote the rest ("also considered B; rejected because ..."). A design
+  full of open options is not a design.
+- **Prefer reuse over rebuild.** Explore the existing code first, then reuse the
+  existing framework, invariants, abstractions, and extension points. A new
+  mechanism must justify why the existing one could not be extended.
+- **Fix the right problem in the right module.** Put each change where the
+  problem lives, not where it is convenient. When a consumer needs a capability
+  from a provider, change the provider.
+- **Budget performance.** For every RPC, query, or external call, estimate
+  volume × cost. Prefer batching over per-item calls, the right index over
+  scans, and bound fan-out.
+
+Cover these sections. Drop one only when it genuinely does not apply, and say so
+rather than leaving it blank:
+
+```markdown
+# Design: <feature name>
+
+## Goals And Non-Goals
+What this must achieve, and explicit non-goals that bound the scope.
+
+## High-Level Design
+The shape of the solution — the components and their responsibilities.
+
+## Changes In This Repo
+The concrete modules, endpoints, jobs, configs, and call sites that change, and
+where they are.
+
+## Key Data Structures And Abstractions
+Entities, persisted fields, config keys, and the interfaces introduced or
+changed, with compatibility defaults.
+
+## Data Dependency Flow
+How the key data is produced, transformed, and consumed, and what owns each
+step.
+
+## Key Process Flow
+The main process from trigger to completion, as ordered steps and hand-offs.
+Use a diagram where it earns its place.
+
+## Key Design Tradeoffs
+The decisions that mattered, the alternatives considered, and why. Record an
+architecturally significant decision — hard to reverse, contested, or changing
+a public contract or the data model — as an ADR entry with its context,
+alternatives, and consequences.
+
+## Capacity, Reliability, And Security
+Throughput and storage estimates with headroom; availability, idempotency,
+retry, and consistency expectations; authorization, data sensitivity, and trust
+boundaries.
+
+## Failure-Mode Handling
+Per failure mode: how it is detected, how it is contained or recovered, and the
+blast radius if it fires.
+
+## Rollout Plan And Strategy
+Sequencing, feature flags, compatibility windows, staged rollout, the rollback
+switch, and any backfill.
+
+## Verification Plan
+Multi-phase verification — unit, integration, end-to-end, post-deploy — and what
+evidence proves both no-regression and the new behavior.
+```
+
+{% include "_blf_overlay.md" %}
+{% if jira %}
+## Also write the usage document
+
+`doc/usage-{{ jira }}.md` is part of this phase, not a later one: what a change
+looks like from outside is a design decision, and writing it here is what
+catches a design that cannot be explained to its users.
+
+Write it into the repository at that path as you work — it is committed with
+the design. Cover setup, the commands a user runs, the user-visible behaviour,
+rollout, operations, and support notes. If the change genuinely has no
+user-visible surface, write the file containing `N/A` and the reason; an absent
+file cannot be told from a forgotten one.
+{% endif %}
+
+Title: {{ title }}
+
+Spec:
+{{ spec_md }}
+
+Original request:
+{{ request }}
+{% if comments %}
+
+Reviewer comments to address:
+{{ comments }}
+{% endif %}

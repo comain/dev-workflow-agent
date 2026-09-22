@@ -1,0 +1,81 @@
+{# Rubric incorporated from the dev-skills `planning-and-task-breakdown` skill:
+   dependency graph, vertical slicing, task anatomy, ordering and checkpoints,
+   and the requirement-coverage matrix. The agent running this prompt has no
+   skills installed, so the rubric travels with the prompt. #}
+Write the full `plan.md` document from the accepted spec and design.
+
+{% set document = "plan.md" %}{% include "_document_contract.md" %}
+
+{% include "_repos.md" %}
+
+**Slice vertically.** Each task should deliver a working, testable path through
+the system — not "build all the schema", then "build all the API". A task that
+leaves nothing demonstrable is the wrong slice.
+
+**Order by dependency, and put the risky work first.** Build the foundation
+before what stands on it, keep the system working after every task, and learn
+what is most likely to change the plan early rather than late.
+
+Give every task this shape:
+
+```markdown
+## Task N: <short descriptive title>
+
+**Description:** One paragraph on what this task accomplishes.
+
+**Acceptance criteria:**
+- [ ] Specific, testable condition
+- [ ] Specific, testable condition
+
+**Verification:** The repository's own focused test and build commands, plus any
+manual check.
+
+**Dependencies:** Task numbers, or None.
+
+**Files likely touched:** Real paths in this repository.
+
+**Scope:** Small (1-2 files) | Medium (3-5) | Large (5+)
+```
+
+Put an explicit checkpoint after every two or three tasks: what must pass, and
+what a human should look at before the plan continues.
+
+{% if jira %}
+Documentation work belongs inside the task that makes it necessary, not in a
+task of its own at the end: a task that changes behaviour carries its own
+document update, and its acceptance criteria say so. The task list covers: `doc/spec-{{ jira }}.md`
+when issue context, scope or acceptance criteria change; `doc/design-{{ jira }}.md`
+for API, data-model, pipeline, deployment or cross-repo decisions;
+`doc/usage-{{ jira }}.md` for changed setup, behaviour, commands, rollout,
+operations or support; and, as ship-time work
+rather than part of this change, a refresh of
+`doc/release-approval-{{ jira }}.evidence.json`. For a Java
+repo, include the compile, test, style, static-analysis and Alibaba
+Mandatory-rule verification tasks.
+
+{% endif %}Close with a coverage matrix proving the plan covers the documents it came from.
+A plan is not ready until every acceptance criterion and every design decision
+maps to a task, and anything deliberately uncovered says so:
+
+```markdown
+## Requirement Coverage
+| Source | Requirement or decision | Covered by | Notes |
+| --- | --- | --- | --- |
+| spec | <acceptance criterion> | Task 2, Task 5 | |
+| design | <decision> | Task 3 | |
+```
+
+{% include "_blf_overlay.md" %}
+
+Title: {{ title }}
+
+Spec:
+{{ spec_md }}
+
+Design:
+{{ design_md }}
+{% if comments %}
+
+Reviewer comments to address:
+{{ comments }}
+{% endif %}

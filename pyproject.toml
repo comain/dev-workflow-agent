@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dev-workflow-agent"
+version = "0.1.0"
+description = "Example gated development workflow built on agent-core"
+requires-python = ">=3.11"
+dependencies = [
+  "agent-core[langgraph,api,yaml] @ git+https://github.com/comain/agent-core.git",
+  "mistune>=3.0,<4.0",
+  "uvicorn>=0.30",
+  "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+dev-flow-agent = "dev_flow_agent.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dev_flow_agent = ["workflow/*.yaml", "resources/prompts/*.j2", "ui/templates/*.html", "ui/static/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
