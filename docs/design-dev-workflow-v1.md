@@ -260,7 +260,7 @@ Mapped to spec success criteria 1–10.
 |---|---|---|
 | Unit, agent-core | YAML `human_gate`; re-execution does not duplicate; `invoke_workflow` dispositions including `suspended`; inbox escapes `<script>` | pytest in agent-core |
 | Unit, product | idempotent create; reject loops; status transitions | pytest in this repo |
-| Integration | durable-gate proof with the *product* graph: process A writes intent and exits; process B resumes after answer | scripted two-process test, same bar as `spikes/durable_gate/` |
+| Integration | durable-gate proof with the *product* graph: process A writes intent and exits; process B resumes after answer | `tests/test_durable_product_gate.py` scripted two-process test |
 | UI | empty list, waiting task, completed task HTML contains the four regions | template tests |
 | Local production-proof | `dev` against a fixture repo, real model optional (stub harness in CI) | usage doc walkthrough |
 | No-regression | existing agent-core suites still green, especially `test_workflow_execution.py` (the four old dispositions) and `test_gates_langgraph.py` | CI / local pytest |

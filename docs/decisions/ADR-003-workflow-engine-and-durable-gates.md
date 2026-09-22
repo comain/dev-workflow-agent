@@ -4,7 +4,9 @@
 
 Accepted, 2026-08-06. Implements Task 2 of the roadmap.
 
-Evidence: `spikes/durable_gate/` — executed, not theorised.
+Evidence: the executed results are preserved below. The exploratory spike code
+was retired after `tests/test_durable_product_gate.py` superseded it with a
+maintained product-graph proof.
 
 ## Context
 
@@ -47,7 +49,7 @@ cragent, or UTA with it.
 
 ### 3. Cross-process suspend and resume works — proven
 
-`spikes/durable_gate/` runs a three-node graph (`design` → `design_review` →
+The original spike ran a three-node graph (`design` → `design_review` →
 `build`) against a `SqliteSaver`. Process A hit the gate and **exited**;
 process B resumed from the database alone:
 

@@ -5,8 +5,8 @@ This file is the `dev-flow-product` module.
 
 ## Changes In This Repo
 
-This repo today is docs + `spikes/durable_gate/`. v1 adds the installable
-product.
+At the start of v1 this repo contained only design documents and a durable-gate
+spike. v1 adds the installable product.
 
 ```
 pyproject.toml                    # name=dev-flow-agent, python>=3.11
@@ -38,7 +38,8 @@ resources/
 tests/
 ```
 
-Spike code stays; it is evidence, not imported.
+The exploratory spike was removed after the product graph gained a maintained
+cross-process durability test. Its findings remain recorded in ADR-003.
 
 ## Key Data Structures And Abstractions
 
