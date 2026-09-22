@@ -15,7 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional
 
-from dev_flow_agent.blf import jira_key
+from dev_flow_agent.issue import jira_key
 from dev_flow_agent.workflow.git import commit_and_push
 
 #: Where the documents go, following the issue-tracker document set: `doc/<kind>-<key>.md`.

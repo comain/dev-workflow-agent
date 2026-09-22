@@ -493,7 +493,7 @@ def test_the_two_escalations_do_not_share_a_gate():
     assert routes["escalate_build"]["approve"] == "skip_task"
 
 
-def test_the_enforcement_gate_only_stands_for_blf_work():
+def test_the_enforcement_gate_only_stands_for_issue_work():
     """A repo with no issue key has no enforcement gate to answer to."""
     from dev_flow_agent.workflow.build import more_tasks
 

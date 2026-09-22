@@ -11,7 +11,7 @@ from agent_core.runtime import RuntimeStore, TaskOutcome
 from agent_core.workflow.checkpoints import WorkflowRunIdentity, open_checkpointer
 from agent_core.workflow.execution import invoke_workflow, is_interrupted
 
-from dev_flow_agent.blf import jira_key
+from dev_flow_agent.issue import jira_key
 from dev_flow_agent.config import Settings
 from dev_flow_agent.db import TaskStore
 from dev_flow_agent.progress import turn_progress_port

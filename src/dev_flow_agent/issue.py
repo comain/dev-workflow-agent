@@ -25,7 +25,7 @@ def jira_key(branch: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
-def is_blf(branch: str) -> bool:
+def is_issue_work(branch: str) -> bool:
     return jira_key(branch) is not None
 
 

@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Mapping
 
-from dev_flow_agent.blf import issue_key
+from dev_flow_agent.issue import issue_key
 from dev_flow_agent.declarations import declaration
 from dev_flow_agent.workflow.git import run_base
 from dev_flow_agent.workflow.build import VERDICTS
@@ -99,7 +99,7 @@ is the key derived from the intent so a retry is genuinely safe?""",
 }
 
 #: Added for issue-tracked feature work, from the overlay enforced at review.
-BLF_AXIS: Dict[str, str] = {
+ISSUE_AXIS: Dict[str, str] = {
     "name": "issue",
     "title": "Issue-tracker compliance",
     "focus": """This is issue-tracked feature work, so the issue-tracker overlay is part of the
@@ -356,7 +356,7 @@ def review_axes(state, config, context) -> Dict[str, Any]:
         axes.append(API_AXIS)
     # Compliance is not a depth question: issue-tracked work is issue-tracked work at any size.
     if jira:
-        axes.append(BLF_AXIS)
+        axes.append(ISSUE_AXIS)
     # Announce the whole set before any of them start: the page can then show
     # what is coming rather than growing a list as results trickle in.
     task_ref = str(state.get("task_ref") or "")

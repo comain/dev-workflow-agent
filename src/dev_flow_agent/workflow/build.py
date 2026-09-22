@@ -125,7 +125,7 @@ def next_task(state, config, context) -> Dict[str, Any]:
     run resumed from a checkpoint older than the key would fire the gate with
     a prompt that had lost its rubric.
     """
-    from dev_flow_agent.blf import issue_key
+    from dev_flow_agent.issue import issue_key
 
     task_id = str(state.get("task_ref") or "")
     jira = issue_key(state)
@@ -478,7 +478,7 @@ def more_tasks(state) -> str:
     and the route map would be keyed `True`/`False` while the selector returned
     a string.
     """
-    from dev_flow_agent.blf import issue_key
+    from dev_flow_agent.issue import issue_key
 
     if state.get("build_blocked"):
         return "blocked"

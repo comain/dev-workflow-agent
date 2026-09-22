@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from agent_core.prompts import PromptLibrary
 
-from dev_flow_agent.blf import is_blf, jira_key
+from dev_flow_agent.issue import is_issue_work, jira_key
 from dev_flow_agent.workflow import PROMPT_DIR
 
 BRANCH = "TICKET-100-20260910"
@@ -35,11 +35,11 @@ def library():
     return PromptLibrary(PROMPT_DIR)
 
 
-def test_the_branch_says_whether_this_is_blf_work():
+def test_the_branch_says_whether_this_is_issue_work():
     assert jira_key(BRANCH) == "TICKET-100"
-    assert is_blf(BRANCH)
+    assert is_issue_work(BRANCH)
     assert jira_key("main") is None
-    assert not is_blf("feature/cleanup")
+    assert not is_issue_work("feature/cleanup")
 
 
 @pytest.mark.parametrize("template", ["write_spec.md.j2", "write_design.md.j2", "write_plan.md.j2"])
@@ -82,7 +82,7 @@ def test_the_build_prompt_carries_test_enforcement(library):
 
 def test_the_build_prompt_stays_quiet_for_tooling_work(library):
     out = library.render("build_task.md.j2", {**VALUES, "jira": ""})
-    assert "blf_dev_gate" not in out
+    assert "dev_gate.py" not in out
     assert "NO_COVERAGE" not in out
 
 
@@ -92,22 +92,22 @@ def test_the_plan_schedules_the_documentation_work(library):
     assert "release-approval-TICKET-100.evidence.json" in out
 
 
-def test_blf_work_gets_a_compliance_reviewer():
+def test_issue_work_gets_a_compliance_reviewer():
     from dev_flow_agent.workflow.review import review_axes
 
-    blf = review_axes({"task_ref": "t", "jira": "TICKET-100", "design_md": ""}, {}, {})
-    assert [a["name"] for a in blf["review_axes"]][-1] == "issue"
+    tracked = review_axes({"task_ref": "t", "jira": "TICKET-100", "design_md": ""}, {}, {})
+    assert [a["name"] for a in tracked["review_axes"]][-1] == "issue"
 
     plain = review_axes({"task_ref": "t", "jira": "", "design_md": ""}, {}, {})
     assert "issue" not in [a["name"] for a in plain["review_axes"]]
 
 
 def test_the_compliance_axis_asks_for_the_evidence(library):
-    from dev_flow_agent.workflow.review import BLF_AXIS
+    from dev_flow_agent.workflow.review import ISSUE_AXIS
 
     out = library.render(
         "review_axis.md.j2",
-        {**VALUES, "jira": "TICKET-100", "axis_title": BLF_AXIS["title"], "axis_focus": BLF_AXIS["focus"]},
+        {**VALUES, "jira": "TICKET-100", "axis_title": ISSUE_AXIS["title"], "axis_focus": ISSUE_AXIS["focus"]},
     )
     assert "Issue: TICKET-100" in out
     for asked in ("test-enforcer", "doc/usage-<JIRA>.md", "$jira-$date", "Alibaba"):
@@ -225,11 +225,11 @@ def test_review_does_not_gate_on_a_ship_time_approval(library):
     """Release approval and the RDC `rdcDeployAllowed` flag gate shipping, not
     merging. A branch under review legitimately has neither, so asking for them
     would block work on a gate it has not reached."""
-    from dev_flow_agent.workflow.review import BLF_AXIS
+    from dev_flow_agent.workflow.review import ISSUE_AXIS
 
     out = library.render(
         "review_axis.md.j2",
-        {**VALUES, "jira": "TICKET-100", "axis_title": BLF_AXIS["title"], "axis_focus": BLF_AXIS["focus"]},
+        {**VALUES, "jira": "TICKET-100", "axis_title": ISSUE_AXIS["title"], "axis_focus": ISSUE_AXIS["focus"]},
     )
     assert "doc/release-approval-TICKET-100.evidence.json" not in out
     assert "Say nothing about them." in out
